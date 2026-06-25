@@ -33,3 +33,5 @@ flutter:
         pluginClass: FlutterPerfMonitorPlugin
       ios:
         pluginClass: FlutterPerfMonitorPlugin
+      ohos:
+        pluginClass: FlutterPerfMonitorPlugin

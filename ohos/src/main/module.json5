@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "flutter_perf_monitor",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ]
+  }
+}
