@@ -119,6 +119,8 @@ pubspec.lock
 
 # FVM (Flutter Version Management)
 .fvm/
+.fvmrc
+.vscode/settings.json
 
 # macOS
 .DS_Store
