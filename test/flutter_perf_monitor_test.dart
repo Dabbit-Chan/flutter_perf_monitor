@@ -183,41 +183,6 @@ void main() {
       expect(perCore, isA<List<double>>());
       expect(perCore.length, greaterThanOrEqualTo(0));
     });
-
-    test('should fetch one-time metrics without starting monitoring', () async {
-      await FlutterPerfMonitor.initialize();
-
-      final metrics = await FlutterPerfMonitor.fetchPerformanceMetrics();
-      expect(metrics, isA<PerformanceMetrics>());
-      expect(metrics.fps, isA<double>());
-      expect(metrics.memoryUsage, isA<int>());
-      expect(metrics.timestamp, isA<DateTime>());
-      expect(metrics.frameTime, isA<double>());
-      expect(metrics.cpuUsage, isA<double>());
-
-      final fpsData = await FlutterPerfMonitor.fetchFPSData();
-      expect(fpsData, isA<FPSData>());
-      expect(fpsData.currentFPS, isA<double>());
-
-      final memoryData = await FlutterPerfMonitor.fetchMemoryData();
-      expect(memoryData, isA<MemoryData>());
-      expect(memoryData.currentUsage, greaterThanOrEqualTo(0));
-
-      final memoryUsage = await FlutterPerfMonitor.fetchMemoryUsage();
-      expect(memoryUsage, greaterThanOrEqualTo(0));
-
-      final totalMemory = await FlutterPerfMonitor.fetchTotalMemory();
-      expect(totalMemory, greaterThanOrEqualTo(0));
-
-      final availableMemory = await FlutterPerfMonitor.fetchAvailableMemory();
-      expect(availableMemory, greaterThanOrEqualTo(0));
-
-      final cpuUsage = await FlutterPerfMonitor.fetchCpuUsage();
-      expect(cpuUsage, inInclusiveRange(0.0, 100.0));
-
-      final perCore = await FlutterPerfMonitor.fetchPerCoreCpuUsage();
-      expect(perCore, isA<List<double>>());
-    });
   });
 
   group('PerformanceMetrics', () {
