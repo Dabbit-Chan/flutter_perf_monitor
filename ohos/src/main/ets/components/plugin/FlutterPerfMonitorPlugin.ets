@@ -34,11 +34,13 @@ export default class FlutterPerfMonitorPlugin implements FlutterPlugin, MethodCa
     if (call.method == "getMemoryInfo") {
       try {
         // hidebug.getSystemMemInfo() 同步返回系统内存信息。
-        // SystemMemInfo 的 totalMem / freeMem / availableMem 均为 bigint，单位为字节。
+        // SystemMemInfo 的 totalMem / freeMem / availableMem 均为 bigint，单位为 KB。
         const systemMemInfo: hidebug.SystemMemInfo = hidebug.getSystemMemInfo();
 
-        const totalMemory = Number(systemMemInfo.totalMem);
-        const freeMemory = Number(systemMemInfo.freeMem);
+        // 原生返回 KB，Dart 端期望字节（与 Android/iOS 及 ProcessInfo.currentRss 对齐），需 ×1024
+        const KB_TO_BYTES = 1024;
+        const totalMemory = Number(systemMemInfo.totalMem) * KB_TO_BYTES;
+        const freeMemory = Number(systemMemInfo.freeMem) * KB_TO_BYTES;
         const usedMemory = totalMemory - freeMemory;
         const percentUsed = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0;
 
