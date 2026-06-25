@@ -30,34 +30,11 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
+class _MyHomePageState extends State<MyHomePage> {
   bool _isMonitoring = false;
 
   @override
-  void initState() {
-    super.initState();
-
-    // Initialize the performance monitor
-    FlutterPerfMonitor.initialize();
-
-    // Set up animation for demo purposes
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    _animationController.repeat(reverse: true);
-  }
-
-  @override
   void dispose() {
-    _animationController.dispose();
     FlutterPerfMonitor.dispose();
     super.dispose();
   }
@@ -101,35 +78,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 40),
 
-                // Animated widget to generate some load
-                AnimatedBuilder(
-                  animation: _animation,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      angle: _animation.value * 2 * 3.14159,
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2196F3), Color(0xFF9C27B0)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: const Icon(
-                          Icons.speed,
-                          color: Color(0xFFFFFFFF),
-                          size: 50,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 40),
-
                 ElevatedButton(
                   onPressed: _toggleMonitoring,
                   style: ElevatedButton.styleFrom(
@@ -169,7 +117,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               alignment: Alignment.topLeft,
               backgroundColor: Color(0x80000000),
               textColor: Color(0xFFFFFFFF),
-              showFPS: true,
               showMemory: true,
               showCPU: true,
             ),

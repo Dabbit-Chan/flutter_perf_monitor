@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'flutter_perf_monitor.dart';
-import 'models/fps_data.dart';
 import 'models/memory_data.dart';
 import 'models/performance_metrics.dart';
 
 /// A widget that displays real-time performance metrics.
 ///
-/// This widget shows FPS, memory usage, and other performance indicators
+/// This widget shows memory usage, CPU usage, and other performance indicators
 /// in a visually appealing overlay that can be positioned anywhere in your app.
 class PerfMonitorWidget extends StatefulWidget {
   /// The position of the monitor widget
   final Alignment alignment;
-
-  /// Whether to show the FPS display
-  final bool showFPS;
 
   /// Whether to show the memory usage display
   final bool showMemory;
@@ -37,7 +33,6 @@ class PerfMonitorWidget extends StatefulWidget {
   ///
   /// [key] - The widget key
   /// [alignment] - The position of the monitor widget
-  /// [showFPS] - Whether to show the FPS display
   /// [showMemory] - Whether to show the memory usage display
   /// [showCPU] - Whether to show the CPU usage display
   /// [backgroundColor] - The background color of the monitor
@@ -47,7 +42,6 @@ class PerfMonitorWidget extends StatefulWidget {
   const PerfMonitorWidget({
     super.key,
     this.alignment = Alignment.topRight,
-    this.showFPS = true,
     this.showMemory = true,
     this.showCPU = true,
     this.backgroundColor = const Color(0x80000000),
@@ -62,7 +56,6 @@ class PerfMonitorWidget extends StatefulWidget {
 
 class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
   PerformanceMetrics? _currentMetrics;
-  FPSData? _currentFPS;
   MemoryData? _currentMemory;
   bool _isExpanded = false;
 
@@ -83,14 +76,6 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
       if (mounted) {
         setState(() {
           _currentMetrics = metrics;
-        });
-      }
-    });
-
-    FlutterPerfMonitor.instance.fpsStream.listen((fps) {
-      if (mounted) {
-        setState(() {
-          _currentFPS = fps;
         });
       }
     });
@@ -139,8 +124,6 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.showFPS && _currentFPS != null)
-          _buildMetricChip('FPS', _currentFPS!.currentFPS.toStringAsFixed(1)),
         if (widget.showMemory && _currentMemory != null)
           _buildMetricChip(
             'MEM',
@@ -161,7 +144,6 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(),
-        if (widget.showFPS && _currentFPS != null) _buildFPSDetails(),
         if (widget.showMemory && _currentMemory != null) _buildMemoryDetails(),
         if (widget.showCPU && _currentMetrics != null) _buildCPUDetails(),
       ],
@@ -211,17 +193,6 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
     );
   }
 
-  Widget _buildFPSDetails() {
-    if (_currentFPS == null) return const SizedBox.shrink();
-
-    return _buildDetailSection('FPS', [
-      _buildDetailRow('Current', _currentFPS!.currentFPS.toStringAsFixed(1)),
-      _buildDetailRow('Average', _currentFPS!.averageFPS.toStringAsFixed(1)),
-      _buildDetailRow('Min', _currentFPS!.minFPS.toStringAsFixed(1)),
-      _buildDetailRow('Max', _currentFPS!.maxFPS.toStringAsFixed(1)),
-    ]);
-  }
-
   Widget _buildMemoryDetails() {
     if (_currentMemory == null) return const SizedBox.shrink();
 
@@ -262,10 +233,6 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
       _buildDetailRow(
         'Usage',
         '${_currentMetrics!.cpuUsage.toStringAsFixed(1)}%',
-      ),
-      _buildDetailRow(
-        'Frame Time',
-        '${_currentMetrics!.frameTime.toStringAsFixed(2)}ms',
       ),
     ]);
   }
