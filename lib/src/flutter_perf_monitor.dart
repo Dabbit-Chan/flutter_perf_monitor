@@ -137,6 +137,11 @@ class FlutterPerfMonitor {
     return instance._getCurrentMemoryUsage();
   }
 
+  /// Get total device memory in bytes
+  static int getTotalMemory() {
+    return instance._totalMemory;
+  }
+
   /// Get current performance metrics
   static PerformanceMetrics getCurrentMetrics() {
     return instance._createPerformanceMetrics();
