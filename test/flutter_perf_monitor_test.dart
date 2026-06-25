@@ -185,6 +185,110 @@ void main() {
     });
   });
 
+  group('FlutterPerfMonitor snapshots (on-demand)', () {
+    setUp(() {
+      // Reset the singleton instance before each test
+      FlutterPerfMonitor.dispose();
+    });
+
+    tearDown(() {
+      FlutterPerfMonitor.dispose();
+    });
+
+    test('getFPSSnapshot should return FPSData without monitoring', () async {
+      final fpsData = await FlutterPerfMonitor.getFPSSnapshot();
+      expect(fpsData, isA<FPSData>());
+      expect(fpsData.currentFPS, isA<double>());
+      expect(fpsData.currentFPS, greaterThanOrEqualTo(0.0));
+      expect(fpsData.timestamp, isA<DateTime>());
+    });
+
+    test('getFPSSnapshot should auto-initialize without explicit init', () async {
+      // Do NOT call initialize() first - snapshot should auto-init
+      final fpsData = await FlutterPerfMonitor.getFPSSnapshot();
+      expect(fpsData, isA<FPSData>());
+    });
+
+    test('getMemorySnapshot should return MemoryData without monitoring',
+        () async {
+      final memoryData = await FlutterPerfMonitor.getMemorySnapshot();
+      expect(memoryData, isA<MemoryData>());
+      expect(memoryData.currentUsage, isA<int>());
+      expect(memoryData.currentUsage, greaterThanOrEqualTo(0));
+      expect(memoryData.totalMemory, isA<int>());
+      expect(memoryData.availableMemory, isA<int>());
+      expect(memoryData.usagePercentage, isA<double>());
+    });
+
+    test('getMetricsSnapshot should return PerformanceMetrics without monitoring',
+        () async {
+      final metrics = await FlutterPerfMonitor.getMetricsSnapshot();
+      expect(metrics, isA<PerformanceMetrics>());
+      expect(metrics.fps, isA<double>());
+      expect(metrics.memoryUsage, isA<int>());
+      expect(metrics.cpuUsage, isA<double>());
+      expect(metrics.cpuUsage, greaterThanOrEqualTo(0.0));
+      expect(metrics.cpuUsage, lessThanOrEqualTo(100.0));
+      expect(metrics.frameTime, isA<double>());
+      expect(metrics.timestamp, isA<DateTime>());
+    });
+
+    test('getCpuUsageSnapshot should return a value in [0, 100]', () async {
+      final cpuUsage = await FlutterPerfMonitor.getCpuUsageSnapshot();
+      expect(cpuUsage, isA<double>());
+      expect(cpuUsage, greaterThanOrEqualTo(0.0));
+      expect(cpuUsage, lessThanOrEqualTo(100.0));
+    });
+
+    test('getPerCoreCpuSnapshot should return a List<double>', () async {
+      final perCore = await FlutterPerfMonitor.getPerCoreCpuSnapshot();
+      expect(perCore, isA<List<double>>());
+      expect(perCore.length, greaterThanOrEqualTo(0));
+    });
+
+    test('getAvailableMemorySnapshot should return a non-negative int', () async {
+      final available = await FlutterPerfMonitor.getAvailableMemorySnapshot();
+      expect(available, isA<int>());
+      expect(available, greaterThanOrEqualTo(0));
+    });
+
+    test('snapshots should work after dispose (auto re-init)', () async {
+      await FlutterPerfMonitor.initialize();
+      FlutterPerfMonitor.dispose();
+
+      // After dispose, snapshot should still work via auto-init
+      final fpsData = await FlutterPerfMonitor.getFPSSnapshot();
+      expect(fpsData, isA<FPSData>());
+
+      final memoryData = await FlutterPerfMonitor.getMemorySnapshot();
+      expect(memoryData, isA<MemoryData>());
+    });
+
+    test('snapshots should work alongside active monitoring', () async {
+      await FlutterPerfMonitor.initialize();
+      FlutterPerfMonitor.startMonitoring();
+
+      // Snapshot while monitoring is active should also work
+      final metrics = await FlutterPerfMonitor.getMetricsSnapshot();
+      expect(metrics, isA<PerformanceMetrics>());
+
+      FlutterPerfMonitor.stopMonitoring();
+    });
+
+    test('getPerCoreCpuSnapshot should return a copy, not the internal list',
+        () async {
+      await FlutterPerfMonitor.initialize();
+
+      final first = await FlutterPerfMonitor.getPerCoreCpuSnapshot();
+      final second = await FlutterPerfMonitor.getPerCoreCpuSnapshot();
+      // Mutating the returned list should not affect future calls
+      if (first.isNotEmpty) {
+        first[0] = -999.0;
+      }
+      expect(second, isNot(contains(-999.0)));
+    });
+  });
+
   group('PerformanceMetrics', () {
     test('should create with required parameters', () {
       final now = DateTime.now();

@@ -152,6 +152,102 @@ class FlutterPerfMonitor {
     return instance._perCoreCpuUsage;
   }
 
+  // ===========================================================================
+  //  On-demand snapshot methods
+  //
+  //  These methods perform a single, self-contained measurement without
+  //  requiring startMonitoring()/stopMonitoring(). Each call auto-initializes
+  //  the monitor (if needed) and fetches fresh data from the native platform
+  //  where applicable.
+  // ===========================================================================
+
+  /// Ensures the monitor is initialized before fetching on-demand data.
+  static Future<void> _ensureInitialized() async {
+    if (!instance._isInitialized) {
+      await initialize();
+    }
+  }
+
+  /// Get a one-time FPS data snapshot without continuous monitoring.
+  ///
+  /// Returns the current [FPSData] including current, average, min, and max
+  /// FPS values. Frames are tracked automatically after initialization, so
+  /// this method returns real FPS data as soon as the app is rendering.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<FPSData> getFPSSnapshot() async {
+    await _ensureInitialized();
+    return instance._createFPSData();
+  }
+
+  /// Get a one-time memory data snapshot without continuous monitoring.
+  ///
+  /// Fetches fresh memory information from the native platform (total memory,
+  /// available memory) and combines it with the current process RSS usage to
+  /// produce a complete [MemoryData] object.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<MemoryData> getMemorySnapshot() async {
+    await _ensureInitialized();
+    await instance._updateNativeMetrics();
+    return instance._createMemoryData();
+  }
+
+  /// Get a one-time complete performance metrics snapshot.
+  ///
+  /// Fetches fresh native metrics (memory and CPU) and returns a combined
+  /// [PerformanceMetrics] object containing FPS, memory usage, frame time,
+  /// and CPU usage.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<PerformanceMetrics> getMetricsSnapshot() async {
+    await _ensureInitialized();
+    await instance._updateNativeMetrics();
+    return instance._createPerformanceMetrics();
+  }
+
+  /// Get a one-time CPU usage snapshot without continuous monitoring.
+  ///
+  /// Returns the current CPU usage as a percentage (0.0–100.0). On native
+  /// platforms this value is fetched from the host; on web an FPS-based
+  /// estimation is used.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<double> getCpuUsageSnapshot() async {
+    await _ensureInitialized();
+    await instance._updateNativeMetrics();
+    if (kIsWeb) {
+      return instance._estimateCPUUsage();
+    }
+    return instance._currentCpuUsage > 0
+        ? instance._currentCpuUsage.clamp(0.0, 100.0)
+        : instance._estimateCPUUsage();
+  }
+
+  /// Get a one-time per-core CPU usage snapshot without continuous monitoring.
+  ///
+  /// Returns a list of per-core CPU usage percentages. On web an empty list is
+  /// returned.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<List<double>> getPerCoreCpuSnapshot() async {
+    await _ensureInitialized();
+    await instance._updateNativeMetrics();
+    return List<double>.from(instance._perCoreCpuUsage);
+  }
+
+  /// Get a one-time available memory snapshot without continuous monitoring.
+  ///
+  /// Returns the current available memory in bytes as reported by the native
+  /// platform. On web this returns 0.
+  ///
+  /// This method does NOT require [startMonitoring] to have been called.
+  static Future<int> getAvailableMemorySnapshot() async {
+    await _ensureInitialized();
+    await instance._updateNativeMetrics();
+    return instance._availableMemory;
+  }
+
   /// Dispose of resources
   ///
   /// This method should be called when the monitor is no longer needed.
@@ -164,7 +260,9 @@ class FlutterPerfMonitor {
   }
 
   void _onFrame(Duration timeStamp) {
-    if (!_isMonitoring) return;
+    // Track frames whenever initialized so that on-demand snapshot methods
+    // can return real FPS data without requiring startMonitoring().
+    if (!_isInitialized) return;
 
     final now = DateTime.now();
 
@@ -218,7 +316,9 @@ class FlutterPerfMonitor {
   }
 
   Future<void> _updateNativeMetrics() async {
-    if (!_isMonitoring) return;
+    // No _isMonitoring guard here: this method is reused by the on-demand
+    // snapshot methods so they can refresh native data in a single call.
+    // Callers such as _collectMetrics guard on _isMonitoring themselves.
 
     // Skip native calls on web platform
     if (kIsWeb) {
