@@ -63,8 +63,13 @@ The primary interface is `FlutterPerfMonitor`, which exposes the following metho
 - `initialize()`: Sets up the performance monitor.
 - `startMonitoring()` / `stopMonitoring()`: Controls the monitoring lifecycle.
 - `getFPS()`: Returns the current frame rate.
-- `getMemoryUsage()`: Returns total, available, and used memory.
-- `getPerCoreCpuUsage()`: Returns CPU usage percentages.
+- `getMemoryUsage()`: Returns the current process memory usage in bytes.
+- `getPerCoreCpuUsage()`: Returns the cached per-core CPU usage percentages.
+- `fetchPerformanceMetrics()`: Fetches a one-time `PerformanceMetrics` snapshot.
+- `fetchFPSData()`: Fetches a one-time `FPSData` snapshot.
+- `fetchMemoryData()`: Fetches a one-time `MemoryData` snapshot.
+- `fetchMemoryUsage()`, `fetchTotalMemory()`, `fetchAvailableMemory()`: Fetch one-time memory values in bytes.
+- `fetchCpuUsage()`, `fetchPerCoreCpuUsage()`: Fetch one-time CPU usage values.
 
 For displaying metrics, use the `PerfMonitorWidget`.
 

@@ -152,6 +152,61 @@ class FlutterPerfMonitor {
     return instance._perCoreCpuUsage;
   }
 
+  /// Fetch a one-time snapshot of current performance metrics.
+  ///
+  /// This refreshes native memory and CPU data immediately and does not require
+  /// [startMonitoring] to be active.
+  static Future<PerformanceMetrics> fetchPerformanceMetrics() async {
+    await instance._refreshNativeMetrics();
+    return instance._createPerformanceMetrics();
+  }
+
+  /// Fetch a one-time snapshot of current FPS data.
+  ///
+  /// FPS values are based on frames observed since [initialize] was called.
+  static Future<FPSData> fetchFPSData() async {
+    return instance._createFPSData();
+  }
+
+  /// Fetch a one-time snapshot of current memory data.
+  ///
+  /// This refreshes native total and available memory immediately and does not
+  /// require [startMonitoring] to be active.
+  static Future<MemoryData> fetchMemoryData() async {
+    await instance._refreshNativeMetrics();
+    return instance._createMemoryData();
+  }
+
+  /// Fetch current memory usage in bytes.
+  static Future<int> fetchMemoryUsage() async {
+    await instance._refreshNativeMetrics();
+    return instance._getCurrentMemoryUsage();
+  }
+
+  /// Fetch total device memory in bytes.
+  static Future<int> fetchTotalMemory() async {
+    await instance._refreshNativeMetrics();
+    return instance._totalMemory;
+  }
+
+  /// Fetch available device memory in bytes.
+  static Future<int> fetchAvailableMemory() async {
+    await instance._refreshNativeMetrics();
+    return instance._getAvailableMemory();
+  }
+
+  /// Fetch current CPU usage percentage.
+  static Future<double> fetchCpuUsage() async {
+    await instance._refreshNativeMetrics();
+    return instance._getCpuUsage();
+  }
+
+  /// Fetch per-core CPU usage percentages.
+  static Future<List<double>> fetchPerCoreCpuUsage() async {
+    await instance._refreshNativeMetrics();
+    return List<double>.unmodifiable(instance._perCoreCpuUsage);
+  }
+
   /// Dispose of resources
   ///
   /// This method should be called when the monitor is no longer needed.
@@ -200,7 +255,7 @@ class FlutterPerfMonitor {
     if (!_isMonitoring) return;
 
     // Update native metrics first
-    await _updateNativeMetrics();
+    await _refreshNativeMetrics();
 
     final memoryData = _createMemoryData();
     final fpsData = _createFPSData();
@@ -217,9 +272,7 @@ class FlutterPerfMonitor {
     }
   }
 
-  Future<void> _updateNativeMetrics() async {
-    if (!_isMonitoring) return;
-
+  Future<void> _refreshNativeMetrics() async {
     // Skip native calls on web platform
     if (kIsWeb) {
       // On web, use FPS-based CPU estimation
@@ -293,14 +346,6 @@ class FlutterPerfMonitor {
   }
 
   PerformanceMetrics _createPerformanceMetrics() {
-    // On web, always recalculate CPU usage based on current FPS
-    // On native platforms, use the cached value from native if available
-    final cpuUsage = kIsWeb
-        ? _estimateCPUUsage() // Always recalculate on web
-        : (_currentCpuUsage > 0
-              ? _currentCpuUsage.clamp(0.0, 100.0)
-              : _estimateCPUUsage());
-
     return PerformanceMetrics(
       fps: _currentFPS,
       memoryUsage: _getCurrentMemoryUsage(),
@@ -308,8 +353,20 @@ class FlutterPerfMonitor {
       frameTime: _lastFrameTime != null
           ? DateTime.now().difference(_lastFrameTime!).inMicroseconds / 1000.0
           : 0.0,
-      cpuUsage: cpuUsage,
+      cpuUsage: _getCpuUsage(),
     );
+  }
+
+  double _getCpuUsage() {
+    // On web, always recalculate CPU usage based on current FPS.
+    // On native platforms, use the cached value from native if available.
+    final cpuUsage = kIsWeb
+        ? _estimateCPUUsage()
+        : (_currentCpuUsage > 0
+              ? _currentCpuUsage.clamp(0.0, 100.0)
+              : _estimateCPUUsage());
+
+    return cpuUsage.toDouble();
   }
 
   int _getCurrentMemoryUsage() {
